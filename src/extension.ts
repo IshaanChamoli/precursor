@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { getLoginHtml } from './webview/login.html';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -39,7 +40,20 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		);
 
-		panel.webview.html = getHtmlContent();
+		panel.webview.html = getHtmlContent(panel.webview, context.extensionUri);
+
+		// Handle messages from the webview
+		panel.webview.onDidReceiveMessage(
+			message => {
+				switch (message.command) {
+					case 'login':
+						vscode.window.showInformationMessage('Login button clicked! (Authentication coming soon)');
+						return;
+				}
+			},
+			undefined,
+			context.subscriptions
+		);
 	});
 
 	context.subscriptions.push(openPanelCommand);
@@ -63,19 +77,9 @@ export function activate(context: vscode.ExtensionContext) {
 //
 // Current architecture: ONE shared HTML for consistency and maintainability
 // ============================================================================
-function getHtmlContent() {
-	return `<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Precursor</title>
-</head>
-<body>
-	<h1>Hello World from precursor!</h1>
-	<p>This panel can be moved anywhere!</p>
-</body>
-</html>`;
+function getHtmlContent(webview: vscode.Webview, extensionUri: vscode.Uri) {
+	const logoUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'icons', 'logo.png'));
+	return getLoginHtml(logoUri.toString());
 }
 
 // Webview provider for the sidebar
@@ -94,7 +98,16 @@ class PrecursorViewProvider implements vscode.WebviewViewProvider {
 		};
 
 		// Set the HTML content
-		webviewView.webview.html = getHtmlContent();
+		webviewView.webview.html = getHtmlContent(webviewView.webview, this._extensionUri);
+
+		// Handle messages from the webview
+		webviewView.webview.onDidReceiveMessage(message => {
+			switch (message.command) {
+				case 'login':
+					vscode.window.showInformationMessage('Login button clicked! (Authentication coming soon)');
+					return;
+			}
+		});
 	}
 }
 
