@@ -45,7 +45,24 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(openPanelCommand);
 }
 
-// HTML content shared by both sidebar and panel
+// ============================================================================
+// ⚠️  CRITICAL: SHARED HTML CONTENT FOR BOTH SIDEBAR AND PANEL
+// ============================================================================
+// This function is used by BOTH the sidebar view AND the moveable panel.
+//
+// ANY changes here will affect BOTH views!
+//
+// ❌ NEVER write view-specific code here without explicit approval
+// ❌ NEVER create separate HTML for just one view without consulting this comment
+//
+// If you need different behavior for sidebar vs panel:
+// 1. STOP and read this comment again
+// 2. Discuss why they need to be different
+// 3. Get explicit permission before splitting them
+// 4. If approved, create separate functions: getSidebarHtml() and getPanelHtml()
+//
+// Current architecture: ONE shared HTML for consistency and maintainability
+// ============================================================================
 function getHtmlContent() {
 	return `<!DOCTYPE html>
 <html lang="en">

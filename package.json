@@ -20,7 +20,10 @@
       {
         "command": "precursor.openPanel",
         "title": "Open Precursor Panel",
-        "icon": "$(window)"
+        "icon": {
+          "light": "./icons/logo.png",
+          "dark": "./icons/logo.png"
+        }
       }
     ],
     "viewsContainers": {
@@ -28,7 +31,7 @@
         {
           "id": "precursor-sidebar",
           "title": "Precursor",
-          "icon": "$(beaker)"
+          "icon": "./icons/logo.png"
         }
       ]
     },
