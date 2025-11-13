@@ -1,5 +1,5 @@
-// Login UI HTML
-export function getLoginHtml(logoUri: string): string {
+// Login page - shown when user is not authenticated
+export function getLoginView(logoUri: string): string {
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
