@@ -107,7 +107,9 @@ async function getHtmlContent(webview: vscode.Webview, extensionUri: vscode.Uri,
 	if (user) {
 		// Extract first name from user's name
 		const firstName = user.name ? user.name.split(' ')[0] : user.email.split('@')[0];
-		return getHomeView(firstName, logoUri.toString());
+		// Pass full name for initials fallback
+		const fullName = user.name || user.email.split('@')[0];
+		return getHomeView(firstName, fullName, logoUri.toString(), user.github_picture);
 	}
 
 	return getLoginView(logoUri.toString());

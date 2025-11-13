@@ -101,7 +101,8 @@ export class AuthService {
 				github_id: githubUser.id.toString(),
 				name: githubUser.name,
 				email: githubUser.email,
-				github: githubUser.login
+				github: githubUser.login,
+				github_picture: githubUser.avatar_url
 			}, {
 				onConflict: 'github_id'
 			});

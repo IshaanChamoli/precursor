@@ -1,8 +1,9 @@
 {
   "name": "precursor",
-  "displayName": "precursor",
+  "displayName": "Precursor",
   "description": "Learn while you vibecode",
   "version": "0.0.1",
+  "icon": "icons/logo.png",
   "engines": {
     "vscode": "^1.105.0"
   },

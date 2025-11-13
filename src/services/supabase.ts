@@ -29,4 +29,5 @@ export interface User {
 	name: string | null;
 	email: string;
 	github: string | null;
+	github_picture: string | null; // GitHub avatar URL
 }
