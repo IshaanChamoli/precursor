@@ -9,7 +9,7 @@ export function getFileTrackerHTML(files: FileInfo[]): string {
 		name: file.name,
 		path: file.path,
 		fullPath: file.fullPath,
-		content: file.content
+		content: file.currentContent // Use currentContent (for now, just showing current)
 	})));
 
 	return `

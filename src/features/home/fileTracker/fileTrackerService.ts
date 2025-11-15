@@ -4,7 +4,8 @@ export interface FileInfo {
 	name: string;
 	path: string; // Folder path from workspace root (e.g., "root > src > components")
 	fullPath: string; // Full relative path including filename (e.g., "src/components/Header.tsx")
-	content: string; // Current saved content of the file
+	currentContent: string; // Current saved content of the file
+	previousContent?: string; // Previous saved version (for diff tracking)
 	lastModified: number; // Timestamp of last save
 }
 
@@ -152,12 +153,17 @@ export class FileTrackerService {
 			// Get file stats for last modified time
 			const stats = await vscode.workspace.fs.stat(fileUri);
 
+			// Check if file already exists in cache to preserve previous version
+			const existingFile = this._fileCache.get(relativePath);
+			const previousContent = existingFile?.currentContent;
+
 			// Update cache
 			this._fileCache.set(relativePath, {
 				name: fileName,
 				path: folderPath,
 				fullPath: relativePath,
-				content: textContent,
+				currentContent: textContent,
+				previousContent: previousContent, // Preserve previous saved version
 				lastModified: stats.mtime
 			});
 		} catch (err) {
