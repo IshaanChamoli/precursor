@@ -37,7 +37,10 @@ export function getHomeView(
 			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 			background-color: var(--vscode-editor-background);
 			color: var(--vscode-foreground);
-			min-height: 100vh;
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
 		}
 
 		/* Header with logo and branding */
@@ -47,6 +50,7 @@ export function getHomeView(
 			gap: 10px;
 			padding: 12px 16px;
 			border-bottom: 1px solid var(--vscode-panel-border);
+			flex-shrink: 0;
 		}
 
 		.header-logo {
@@ -127,14 +131,18 @@ export function getHomeView(
 
 		/* Main content area */
 		.content {
-			padding: 20px 16px;
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
 		}
 
 		/* Two-panel layout - stacked vertically */
 		.panels-container {
 			display: flex;
 			flex-direction: column;
-			height: calc(100vh - 200px); /* Adjust based on header and greeting height */
+			flex: 1;
+			overflow: hidden;
 		}
 
 		.panel {
@@ -142,21 +150,18 @@ export function getHomeView(
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
+			padding: 20px 16px;
 		}
 
-		.panel:first-child {
-			border-bottom: 2px solid var(--vscode-panel-border);
-			padding-bottom: 16px;
-			margin-bottom: 16px;
+		.panel.panel-top {
+			border-bottom: 1px solid var(--vscode-panel-border);
 		}
 
 		.panel-title {
-			font-size: 14px;
+			font-size: 18px;
 			font-weight: 600;
 			color: var(--vscode-foreground);
 			margin-bottom: 12px;
-			padding-bottom: 8px;
-			border-bottom: 1px solid var(--vscode-panel-border);
 		}
 
 		.ai-insights-placeholder {
@@ -194,20 +199,20 @@ export function getHomeView(
 	<!-- Main content -->
 	<div class="content">
 
-		<!-- Two-column layout -->
+		<!-- Two-panel layout -->
 		<div class="panels-container">
-			<!-- Left panel: File Tracking -->
-			<div class="panel">
-				<h2 class="panel-title">File Tracking</h2>
-				${getFileTrackerHTML(files)}
-			</div>
-
-			<!-- Right panel: AI Insights -->
-			<div class="panel">
+			<!-- Top panel: AI Insights -->
+			<div class="panel panel-top">
 				<h2 class="panel-title">AI Insights</h2>
 				<div class="ai-insights-placeholder">
 					<!-- AI Insights content will go here -->
 				</div>
+			</div>
+
+			<!-- Bottom panel: File Tracking -->
+			<div class="panel">
+				<h2 class="panel-title">File Tracking</h2>
+				${getFileTrackerHTML(files)}
 			</div>
 		</div>
 	</div>
