@@ -7,7 +7,6 @@ export function getFileTrackerHTML(files: FileInfo[]): string {
 	return `
 		<!-- File list -->
 		<div class="file-list">
-			<div class="file-list-title">Workspace Files</div>
 			${files.map(file => `
 				<div class="file-item">
 					<div class="file-header">
@@ -26,16 +25,8 @@ export function getFileTrackerCSS(): string {
 	return `
 		/* File list */
 		.file-list {
-			margin-top: 24px;
-		}
-
-		.file-list-title {
-			font-size: 12px;
-			font-weight: 600;
-			color: var(--vscode-descriptionForeground);
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
-			margin-bottom: 12px;
+			flex: 1;
+			overflow-y: auto;
 		}
 
 		.file-item {

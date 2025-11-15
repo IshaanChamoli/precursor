@@ -65,7 +65,20 @@ export function getHomeView(
 			font-size: 14px;
 			font-weight: 600;
 			color: var(--vscode-foreground);
-			flex: 1; /* Push profile picture to the right */
+		}
+
+		.header-title .tagline {
+			color: var(--vscode-descriptionForeground);
+			font-size: 10px;
+			font-weight: 400;
+		}
+
+		.header-spacer {
+			flex: 1; /* Push profile to the right */
+		}
+
+		.profile-container {
+			position: relative;
 		}
 
 		.profile-picture {
@@ -74,6 +87,7 @@ export function getHomeView(
 			border-radius: 50%;
 			object-fit: cover;
 			border: 1px solid var(--vscode-panel-border);
+			cursor: pointer;
 		}
 
 		.profile-initials {
@@ -88,6 +102,27 @@ export function getHomeView(
 			font-size: 11px;
 			font-weight: 600;
 			border: 1px solid var(--vscode-panel-border);
+			cursor: pointer;
+		}
+
+		.profile-dropdown {
+			position: absolute;
+			top: 36px;
+			right: 0;
+			background-color: var(--vscode-dropdown-background);
+			border: 1px solid var(--vscode-panel-border);
+			border-radius: 4px;
+			padding: 8px 12px;
+			font-size: 13px;
+			color: var(--vscode-foreground);
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+			white-space: nowrap;
+			z-index: 1000;
+			display: none;
+		}
+
+		.profile-dropdown.show {
+			display: block;
 		}
 
 		/* Main content area */
@@ -95,17 +130,43 @@ export function getHomeView(
 			padding: 20px 16px;
 		}
 
-		.greeting {
-			font-size: 24px;
-			font-weight: 600;
-			margin-bottom: 8px;
-			color: var(--vscode-foreground);
+		/* Two-panel layout - stacked vertically */
+		.panels-container {
+			display: flex;
+			flex-direction: column;
+			height: calc(100vh - 200px); /* Adjust based on header and greeting height */
 		}
 
-		.subtitle {
+		.panel {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+
+		.panel:first-child {
+			border-bottom: 2px solid var(--vscode-panel-border);
+			padding-bottom: 16px;
+			margin-bottom: 16px;
+		}
+
+		.panel-title {
 			font-size: 14px;
+			font-weight: 600;
+			color: var(--vscode-foreground);
+			margin-bottom: 12px;
+			padding-bottom: 8px;
+			border-bottom: 1px solid var(--vscode-panel-border);
+		}
+
+		.ai-insights-placeholder {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
 			color: var(--vscode-descriptionForeground);
-			margin-bottom: 24px;
+			font-size: 12px;
+			opacity: 0.5;
 		}
 
 		${getFileTrackerCSS()}
@@ -117,20 +178,61 @@ export function getHomeView(
 		<div class="header-logo">
 			<img src="${logoUri}" alt="Precursor Logo">
 		</div>
-		<span class="header-title">Precursor</span>
-		${profilePicture
-			? `<img src="${profilePicture}" alt="Profile" class="profile-picture">`
-			: `<div class="profile-initials">${initials}</div>`
-		}
+		<span class="header-title">Precursor <span class="tagline">- Learn while you vibecode</span></span>
+		<div class="header-spacer"></div>
+		<div class="profile-container">
+			${profilePicture
+				? `<img src="${profilePicture}" alt="Profile" class="profile-picture" id="profileButton">`
+				: `<div class="profile-initials" id="profileButton">${initials}</div>`
+			}
+			<div class="profile-dropdown" id="profileDropdown">
+				Hi, ${firstName}
+			</div>
+		</div>
 	</div>
 
 	<!-- Main content -->
 	<div class="content">
-		<h1 class="greeting">Hi, ${firstName}</h1>
-		<p class="subtitle">Learn while you vibecode...</p>
 
-		${getFileTrackerHTML(files)}
+		<!-- Two-column layout -->
+		<div class="panels-container">
+			<!-- Left panel: File Tracking -->
+			<div class="panel">
+				<h2 class="panel-title">File Tracking</h2>
+				${getFileTrackerHTML(files)}
+			</div>
+
+			<!-- Right panel: AI Insights -->
+			<div class="panel">
+				<h2 class="panel-title">AI Insights</h2>
+				<div class="ai-insights-placeholder">
+					<!-- AI Insights content will go here -->
+				</div>
+			</div>
+		</div>
 	</div>
+
+	<script>
+		// Profile dropdown functionality
+		const profileButton = document.getElementById('profileButton');
+		const profileDropdown = document.getElementById('profileDropdown');
+
+		// Toggle dropdown when profile is clicked
+		profileButton.addEventListener('click', (e) => {
+			e.stopPropagation();
+			profileDropdown.classList.toggle('show');
+		});
+
+		// Close dropdown when clicking anywhere else
+		document.addEventListener('click', () => {
+			profileDropdown.classList.remove('show');
+		});
+
+		// Prevent dropdown from closing when clicking inside it
+		profileDropdown.addEventListener('click', (e) => {
+			e.stopPropagation();
+		});
+	</script>
 </body>
 </html>`;
 }
