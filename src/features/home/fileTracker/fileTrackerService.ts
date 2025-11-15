@@ -6,6 +6,39 @@ export interface FileInfo {
 }
 
 export class FileTrackerService {
+	private _onDidChangeEmitter = new vscode.EventEmitter<void>();
+	public readonly onDidChange = this._onDidChangeEmitter.event;
+	private _fileWatcher?: vscode.FileSystemWatcher;
+
+	/**
+	 * Start watching for file changes in the root directory
+	 */
+	startWatching() {
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+		if (!workspaceFolders) {
+			return;
+		}
+
+		// Watch for file changes in the root directory only (not subdirectories)
+		const rootPath = workspaceFolders[0].uri.fsPath;
+		this._fileWatcher = vscode.workspace.createFileSystemWatcher(
+			new vscode.RelativePattern(rootPath, '*')
+		);
+
+		// Trigger refresh on any file change
+		this._fileWatcher.onDidCreate(() => this._onDidChangeEmitter.fire());
+		this._fileWatcher.onDidChange(() => this._onDidChangeEmitter.fire());
+		this._fileWatcher.onDidDelete(() => this._onDidChangeEmitter.fire());
+	}
+
+	/**
+	 * Stop watching for file changes and clean up
+	 */
+	dispose() {
+		this._fileWatcher?.dispose();
+		this._onDidChangeEmitter.dispose();
+	}
+
 	/**
 	 * Get all files in the root directory (not in subdirectories)
 	 * and read the first line of each file
