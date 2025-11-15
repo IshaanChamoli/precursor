@@ -256,8 +256,9 @@ export function getHomeView(
 		});
 
 		// File tracking functionality
-		${getFileListJS()}
+		// Note: fileViewerJS must come first as it defines showFile() which fileListJS calls
 		${getFileViewerJS()}
+		${getFileListJS()}
 	</script>
 </body>
 </html>`;
