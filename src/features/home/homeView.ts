@@ -1,5 +1,7 @@
 import { FileInfo } from './fileTracker/fileTrackerService';
-import { getFileTrackerHTML, getFileTrackerCSS } from './fileTracker/fileTrackerView';
+import { getFileListHTML, getFileListCSS, getFileListJS } from './fileTracker/fileTrackerPanel';
+import { getFileViewerHTML, getFileViewerCSS } from './fileTracker/fileViewer/fileViewerView';
+import { getFileViewerJS } from './fileTracker/fileViewer/fileViewerLogic';
 
 // Main app homepage - shown after user is authenticated
 // This is your main product view that will be built out with features
@@ -26,6 +28,11 @@ export function getHomeView(
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Precursor</title>
+
+	<!-- Prism.js for syntax highlighting -->
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
 	<style>
 		* {
 			margin: 0;
@@ -174,7 +181,8 @@ export function getHomeView(
 			opacity: 0.5;
 		}
 
-		${getFileTrackerCSS()}
+		${getFileListCSS()}
+		${getFileViewerCSS()}
 	</style>
 </head>
 <body>
@@ -212,7 +220,8 @@ export function getHomeView(
 			<!-- Bottom panel: File Tracking -->
 			<div class="panel">
 				<h2 class="panel-title">File Tracking</h2>
-				${getFileTrackerHTML(files)}
+				${getFileListHTML(files)}
+				${getFileViewerHTML()}
 			</div>
 		</div>
 	</div>
@@ -242,66 +251,14 @@ export function getHomeView(
 		});
 
 		// File tracking functionality
-		const fileList = document.getElementById('fileList');
-		const fileViewer = document.getElementById('fileViewer');
-		const fileViewerTitle = document.getElementById('fileViewerTitle');
-		const fileContent = document.getElementById('fileContent');
-		const backButton = document.getElementById('backButton');
-
-		// Load file data from embedded JSON
-		const filesDataElement = document.getElementById('filesData');
-		const filesData = filesDataElement ? JSON.parse(filesDataElement.textContent) : [];
-
-		// Create a map for quick file lookup
-		const filesMap = new Map();
-		filesData.forEach(file => {
-			filesMap.set(file.fullPath, file);
-		});
-
-		// Get or initialize VSCode state
-		const state = vscode.getState() || { viewingFile: null };
-
-		// Function to show a file in the viewer
-		function showFile(filePath) {
-			const file = filesMap.get(filePath);
-			if (file) {
-				fileViewerTitle.textContent = file.name;
-				fileContent.textContent = file.content;
-				fileList.style.display = 'none';
-				fileViewer.style.display = 'flex';
-
-				// Save state
-				vscode.setState({ viewingFile: filePath });
-			}
-		}
-
-		// If we were viewing a file before refresh, restore it with updated content
-		if (state.viewingFile && filesMap.has(state.viewingFile)) {
-			showFile(state.viewingFile);
-		}
-
-		// Handle file item clicks
-		if (fileList) {
-			fileList.addEventListener('click', (e) => {
-				const fileItem = e.target.closest('.file-item');
-				if (fileItem) {
-					const filePath = fileItem.dataset.filepath;
-					showFile(filePath);
-				}
-			});
-		}
-
-		// Handle back button click
-		if (backButton) {
-			backButton.addEventListener('click', () => {
-				fileViewer.style.display = 'none';
-				fileList.style.display = 'block';
-
-				// Clear state
-				vscode.setState({ viewingFile: null });
-			});
-		}
+		${getFileListJS()}
+		${getFileViewerJS()}
 	</script>
+
+	<!-- Prism.js core and plugins -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </body>
 </html>`;
 }
