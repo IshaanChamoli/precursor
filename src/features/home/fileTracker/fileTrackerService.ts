@@ -2,14 +2,17 @@ import * as vscode from 'vscode';
 
 export interface FileInfo {
 	name: string;
-	path: string; // Relative path from workspace root (e.g., "src > components > Header.tsx")
-	firstLine: string;
+	path: string; // Folder path from workspace root (e.g., "root > src > components")
+	fullPath: string; // Full relative path including filename (e.g., "src/components/Header.tsx")
+	content: string; // Current saved content of the file
+	lastModified: number; // Timestamp of last save
 }
 
 export class FileTrackerService {
 	private _onDidChangeEmitter = new vscode.EventEmitter<void>();
 	public readonly onDidChange = this._onDidChangeEmitter.event;
 	private _fileWatcher?: vscode.FileSystemWatcher;
+	private _fileCache: Map<string, FileInfo> = new Map(); // Cache of all tracked files
 
 	/**
 	 * Start watching for file changes in the entire workspace
@@ -26,10 +29,27 @@ export class FileTrackerService {
 			new vscode.RelativePattern(rootPath, '**/*')
 		);
 
-		// Trigger refresh on any file change
-		this._fileWatcher.onDidCreate(() => this._onDidChangeEmitter.fire());
-		this._fileWatcher.onDidChange(() => this._onDidChangeEmitter.fire());
-		this._fileWatcher.onDidDelete(() => this._onDidChangeEmitter.fire());
+		// Update cache when files are created
+		this._fileWatcher.onDidCreate(async (uri) => {
+			await this._updateFileInCache(uri);
+			this._onDidChangeEmitter.fire();
+		});
+
+		// Update cache when files are saved/changed
+		this._fileWatcher.onDidChange(async (uri) => {
+			await this._updateFileInCache(uri);
+			this._onDidChangeEmitter.fire();
+		});
+
+		// Remove from cache when files are deleted
+		this._fileWatcher.onDidDelete((uri) => {
+			const workspaceFolders = vscode.workspace.workspaceFolders;
+			if (workspaceFolders) {
+				const relativePath = uri.path.replace(workspaceFolders[0].uri.path + '/', '');
+				this._fileCache.delete(relativePath);
+				this._onDidChangeEmitter.fire();
+			}
+		});
 	}
 
 	/**
@@ -41,8 +61,7 @@ export class FileTrackerService {
 	}
 
 	/**
-	 * Get all files in the entire workspace recursively
-	 * and read the first line of each file
+	 * Get all tracked files with their current saved content
 	 */
 	async getRootFiles(): Promise<FileInfo[]> {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -50,23 +69,26 @@ export class FileTrackerService {
 			return [];
 		}
 
-		const rootPath = workspaceFolders[0].uri;
-		const fileList: FileInfo[] = [];
+		// If cache is empty, do initial scan
+		if (this._fileCache.size === 0) {
+			await this._initialScan(workspaceFolders[0].uri);
+		}
 
-		// Recursively scan directories
-		await this._scanDirectory(rootPath, rootPath, fileList);
-
-		return fileList;
+		// Return cached files as array
+		return Array.from(this._fileCache.values());
 	}
 
 	/**
-	 * Recursively scan a directory and collect all files
+	 * Initial scan of all files in workspace
 	 */
-	private async _scanDirectory(
-		dirUri: vscode.Uri,
-		rootUri: vscode.Uri,
-		fileList: FileInfo[]
-	): Promise<void> {
+	private async _initialScan(rootUri: vscode.Uri): Promise<void> {
+		await this._scanDirectory(rootUri, rootUri);
+	}
+
+	/**
+	 * Recursively scan a directory and cache all files with their content
+	 */
+	private async _scanDirectory(dirUri: vscode.Uri, rootUri: vscode.Uri): Promise<void> {
 		try {
 			const entries = await vscode.workspace.fs.readDirectory(dirUri);
 
@@ -80,38 +102,67 @@ export class FileTrackerService {
 
 				if (type === vscode.FileType.Directory) {
 					// Recursively scan subdirectories
-					await this._scanDirectory(entryUri, rootUri, fileList);
+					await this._scanDirectory(entryUri, rootUri);
 				} else if (type === vscode.FileType.File) {
-					try {
-						// Read first line of file
-						const content = await vscode.workspace.fs.readFile(entryUri);
-						const text = Buffer.from(content).toString('utf8');
-						const firstLine = text.split('\n')[0] || '';
-
-						// Calculate relative path from root (directory only, no filename)
-						const relativePath = entryUri.path.replace(rootUri.path + '/', '');
-						const pathParts = relativePath.split('/');
-						// Remove the filename (last part) to get just the directory path
-						pathParts.pop();
-
-						// Build path: "root" if in root directory, otherwise "root > folders"
-						const folderPath = pathParts.length === 0
-							? 'root'
-							: 'root > ' + pathParts.join(' > ');
-
-						fileList.push({
-							name,
-							path: folderPath,
-							firstLine: firstLine.substring(0, 100) // Truncate to 100 chars
-						});
-					} catch (err) {
-						// Skip files we can't read (binary files, permissions, etc.)
-						console.log(`Could not read file ${name}:`, err);
-					}
+					// Update file in cache
+					await this._updateFileInCache(entryUri);
 				}
 			}
 		} catch (err) {
 			console.log(`Could not read directory ${dirUri.path}:`, err);
+		}
+	}
+
+	/**
+	 * Update a single file in the cache with its current content
+	 */
+	private async _updateFileInCache(fileUri: vscode.Uri): Promise<void> {
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+		if (!workspaceFolders) {
+			return;
+		}
+
+		const rootUri = workspaceFolders[0].uri;
+		const fileName = fileUri.path.split('/').pop() || '';
+
+		// Skip directories and unwanted files
+		if (fileName === 'node_modules' || fileName === '.git' || fileName === 'dist' ||
+		    fileName === 'out' || fileName === '.vscode' || !fileName) {
+			return;
+		}
+
+		try {
+			// Calculate relative path from root
+			const relativePath = fileUri.path.replace(rootUri.path + '/', '');
+			const pathParts = relativePath.split('/');
+
+			// Remove the filename (last part) to get just the directory path
+			const filePathParts = [...pathParts];
+			filePathParts.pop();
+
+			// Build folder path: "root" if in root directory, otherwise "root > folders"
+			const folderPath = filePathParts.length === 0
+				? 'root'
+				: 'root > ' + filePathParts.join(' > ');
+
+			// Read file content
+			const content = await vscode.workspace.fs.readFile(fileUri);
+			const textContent = Buffer.from(content).toString('utf8');
+
+			// Get file stats for last modified time
+			const stats = await vscode.workspace.fs.stat(fileUri);
+
+			// Update cache
+			this._fileCache.set(relativePath, {
+				name: fileName,
+				path: folderPath,
+				fullPath: relativePath,
+				content: textContent,
+				lastModified: stats.mtime
+			});
+		} catch (err) {
+			// Skip files we can't read (binary files, permissions, etc.)
+			console.log(`Could not read file ${fileName}:`, err);
 		}
 	}
 }

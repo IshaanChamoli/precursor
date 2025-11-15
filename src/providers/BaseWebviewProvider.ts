@@ -48,8 +48,8 @@ export abstract class BaseWebviewProvider {
 	/**
 	 * Handle messages from the webview
 	 */
-	protected async handleMessage(message: any): Promise<void> {
-		switch (message.command) {
+	protected async handleMessage(message: any, webview?: vscode.Webview): Promise<void> {
+		switch (message.command || message.type) {
 			case 'login':
 				await this._authService.login();
 				return;

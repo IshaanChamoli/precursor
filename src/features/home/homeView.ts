@@ -218,6 +218,9 @@ export function getHomeView(
 	</div>
 
 	<script>
+		// VSCode API for communication with extension
+		const vscode = acquireVsCodeApi();
+
 		// Profile dropdown functionality
 		const profileButton = document.getElementById('profileButton');
 		const profileDropdown = document.getElementById('profileDropdown');
@@ -237,6 +240,67 @@ export function getHomeView(
 		profileDropdown.addEventListener('click', (e) => {
 			e.stopPropagation();
 		});
+
+		// File tracking functionality
+		const fileList = document.getElementById('fileList');
+		const fileViewer = document.getElementById('fileViewer');
+		const fileViewerTitle = document.getElementById('fileViewerTitle');
+		const fileContent = document.getElementById('fileContent');
+		const backButton = document.getElementById('backButton');
+
+		// Load file data from embedded JSON
+		const filesDataElement = document.getElementById('filesData');
+		const filesData = filesDataElement ? JSON.parse(filesDataElement.textContent) : [];
+
+		// Create a map for quick file lookup
+		const filesMap = new Map();
+		filesData.forEach(file => {
+			filesMap.set(file.fullPath, file);
+		});
+
+		// Get or initialize VSCode state
+		const state = vscode.getState() || { viewingFile: null };
+
+		// Function to show a file in the viewer
+		function showFile(filePath) {
+			const file = filesMap.get(filePath);
+			if (file) {
+				fileViewerTitle.textContent = file.name;
+				fileContent.textContent = file.content;
+				fileList.style.display = 'none';
+				fileViewer.style.display = 'flex';
+
+				// Save state
+				vscode.setState({ viewingFile: filePath });
+			}
+		}
+
+		// If we were viewing a file before refresh, restore it with updated content
+		if (state.viewingFile && filesMap.has(state.viewingFile)) {
+			showFile(state.viewingFile);
+		}
+
+		// Handle file item clicks
+		if (fileList) {
+			fileList.addEventListener('click', (e) => {
+				const fileItem = e.target.closest('.file-item');
+				if (fileItem) {
+					const filePath = fileItem.dataset.filepath;
+					showFile(filePath);
+				}
+			});
+		}
+
+		// Handle back button click
+		if (backButton) {
+			backButton.addEventListener('click', () => {
+				fileViewer.style.display = 'none';
+				fileList.style.display = 'block';
+
+				// Clear state
+				vscode.setState({ viewingFile: null });
+			});
+		}
 	</script>
 </body>
 </html>`;

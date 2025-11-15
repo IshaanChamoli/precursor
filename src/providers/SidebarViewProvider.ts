@@ -28,7 +28,7 @@ export class SidebarViewProvider extends BaseWebviewProvider implements vscode.W
 
 		// Handle messages from the webview (from base class)
 		webviewView.webview.onDidReceiveMessage(async message => {
-			await this.handleMessage(message);
+			await this.handleMessage(message, webviewView.webview);
 		});
 	}
 

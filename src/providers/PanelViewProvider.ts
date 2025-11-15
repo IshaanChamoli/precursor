@@ -27,7 +27,7 @@ export class PanelViewProvider extends BaseWebviewProvider {
 
 		// Handle messages from the webview (from base class)
 		this._panel.webview.onDidReceiveMessage(async message => {
-			await this.handleMessage(message);
+			await this.handleMessage(message, this._panel.webview);
 		});
 
 		// Clean up when panel is disposed
