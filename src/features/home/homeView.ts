@@ -1,6 +1,15 @@
+import { FileInfo } from './fileTracker/fileTrackerService';
+import { getFileTrackerHTML, getFileTrackerCSS } from './fileTracker/fileTrackerView';
+
 // Main app homepage - shown after user is authenticated
 // This is your main product view that will be built out with features
-export function getHomeView(firstName: string, fullName: string, logoUri: string, profilePicture: string | null): string {
+export function getHomeView(
+	firstName: string,
+	fullName: string,
+	logoUri: string,
+	profilePicture: string | null,
+	files: FileInfo[]
+): string {
 	// Extract initials from name (first letter of first word + first letter of last word)
 	function getInitials(name: string): string {
 		const words = name.trim().split(/\s+/);
@@ -98,6 +107,8 @@ export function getHomeView(firstName: string, fullName: string, logoUri: string
 			color: var(--vscode-descriptionForeground);
 			margin-bottom: 24px;
 		}
+
+		${getFileTrackerCSS()}
 	</style>
 </head>
 <body>
@@ -118,7 +129,7 @@ export function getHomeView(firstName: string, fullName: string, logoUri: string
 		<h1 class="greeting">Hi, ${firstName}</h1>
 		<p class="subtitle">Learn while you vibecode...</p>
 
-		<!-- TODO: Add main app features here -->
+		${getFileTrackerHTML(files)}
 	</div>
 </body>
 </html>`;

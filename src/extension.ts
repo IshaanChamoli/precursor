@@ -6,9 +6,10 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { getLoginView } from './views/loginView';
-import { getHomeView } from './views/homeView';
+import { getLoginView } from './features/login/loginView';
+import { getHomeView } from './features/home/homeView';
 import { AuthService } from './services/auth';
+import { FileTrackerService } from './features/home/fileTracker/fileTrackerService';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -109,7 +110,12 @@ async function getHtmlContent(webview: vscode.Webview, extensionUri: vscode.Uri,
 		const firstName = user.name ? user.name.split(' ')[0] : user.email.split('@')[0];
 		// Pass full name for initials fallback
 		const fullName = user.name || user.email.split('@')[0];
-		return getHomeView(firstName, fullName, logoUri.toString(), user.github_picture);
+
+		// Get root files using FileTrackerService
+		const fileTrackerService = new FileTrackerService();
+		const files = await fileTrackerService.getRootFiles();
+
+		return getHomeView(firstName, fullName, logoUri.toString(), user.github_picture, files);
 	}
 
 	return getLoginView(logoUri.toString());
