@@ -62,29 +62,30 @@ export function getFileViewerJS(): string {
 			const file = filesMap.get(filePath);
 			if (file) {
 				fileViewerTitle.textContent = file.name;
-				fileContent.textContent = file.content;
 
 				// Detect language from file extension
 				const parts = file.name.split('.');
 				const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
 				const language = languageMap[extension] || 'plaintext';
+
+				// Set content and language class
+				fileContent.textContent = file.content;
 				fileContent.className = 'file-content language-' + language;
 
-				// Ensure the pre element has line-numbers class
-				if (fileContentPre && !fileContentPre.classList.contains('line-numbers')) {
-					fileContentPre.classList.add('line-numbers');
-				}
-
+				// Show the viewer
 				fileList.style.display = 'none';
 				fileViewer.style.display = 'flex';
 
-				// Apply Prism syntax highlighting and line numbers
+				// Apply Prism syntax highlighting
 				if (typeof Prism !== 'undefined') {
-					// Use setTimeout to ensure DOM is ready
-					setTimeout(function() {
-						// First highlight the code
-						Prism.highlightElement(fileContent);
-					}, 0);
+					// Remove old line numbers if they exist
+					const existingLineNumbers = fileContentPre.querySelector('.line-numbers-rows');
+					if (existingLineNumbers) {
+						existingLineNumbers.remove();
+					}
+
+					// Highlight the code (this should trigger line numbers automatically)
+					Prism.highlightElement(fileContent);
 				}
 
 				// Save state

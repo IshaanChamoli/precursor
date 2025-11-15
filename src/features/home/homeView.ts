@@ -226,6 +226,11 @@ export function getHomeView(
 		</div>
 	</div>
 
+	<!-- Prism.js core and plugins - MUST load before our code -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
 	<script>
 		// VSCode API for communication with extension
 		const vscode = acquireVsCodeApi();
@@ -254,11 +259,6 @@ export function getHomeView(
 		${getFileListJS()}
 		${getFileViewerJS()}
 	</script>
-
-	<!-- Prism.js core and plugins -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </body>
 </html>`;
 }
