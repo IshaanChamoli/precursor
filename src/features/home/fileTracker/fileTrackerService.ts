@@ -38,7 +38,9 @@ export class FileTrackerService {
 
 		// Update cache when files are saved/changed
 		this._fileWatcher.onDidChange(async (uri) => {
+			console.log('[FILE TRACKER SERVICE] File changed:', uri.path);
 			await this._updateFileInCache(uri);
+			console.log('[FILE TRACKER SERVICE] Firing onDidChange event');
 			this._onDidChangeEmitter.fire();
 		});
 

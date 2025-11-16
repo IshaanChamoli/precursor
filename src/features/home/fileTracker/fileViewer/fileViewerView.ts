@@ -59,34 +59,33 @@ export function getFileViewerCSS(): string {
 			background-color: var(--vscode-button-hoverBackground);
 		}
 
-		.file-content {
-			display: block;
-			background-color: var(--vscode-editor-background);
-			border: 1px solid var(--vscode-panel-border);
-			border-radius: 4px;
-			padding: 12px;
-			font-family: var(--vscode-editor-font-family);
-			font-size: var(--vscode-editor-font-size);
-			line-height: 1.5;
-			color: var(--vscode-editor-foreground);
-			margin: 0;
-			overflow: auto;
-		}
-
-		/* Ensure Prism styles work with VSCode theme */
+		/* Let Prism handle layout, we just provide VSCode theme colors */
 		pre.line-numbers {
 			flex: 1;
 			overflow: auto;
 			margin: 0;
-			padding: 0;
-			background: transparent !important;
+			padding: 1em;
+			background-color: var(--vscode-editor-background) !important;
+			border: 1px solid var(--vscode-panel-border);
+			border-radius: 4px;
+			font-family: var(--vscode-editor-font-family);
+			font-size: var(--vscode-editor-font-size);
+			line-height: 1.5;
 		}
 
 		pre.line-numbers > code {
 			background: transparent !important;
+			color: var(--vscode-editor-foreground);
+			font-family: inherit;
+			font-size: inherit;
 		}
 
-		/* Adjust line number styles to match VSCode */
+		/* Style line numbers with VSCode colors */
+		.line-numbers .line-numbers-rows > span {
+			color: var(--vscode-editorLineNumber-foreground) !important;
+		}
+
+		/* Add border between line numbers and code */
 		.line-numbers .line-numbers-rows {
 			border-right: 1px solid var(--vscode-panel-border);
 		}

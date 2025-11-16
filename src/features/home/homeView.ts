@@ -1,7 +1,4 @@
-import { FileInfo } from './fileTracker/fileTrackerService';
-import { getFileListHTML, getFileListCSS, getFileListJS } from './fileTracker/fileTrackerPanel';
-import { getFileViewerHTML, getFileViewerCSS } from './fileTracker/fileViewer/fileViewerView';
-import { getFileViewerJS } from './fileTracker/fileViewer/fileViewerLogic';
+import { FileInfo, getFileTrackerHTML, getFileTrackerCSS, getFileTrackerJS } from './fileTracker';
 
 // Main app homepage - shown after user is authenticated
 // This is your main product view that will be built out with features
@@ -181,8 +178,7 @@ export function getHomeView(
 			opacity: 0.5;
 		}
 
-		${getFileListCSS()}
-		${getFileViewerCSS()}
+		${getFileTrackerCSS()}
 	</style>
 </head>
 <body>
@@ -220,8 +216,7 @@ export function getHomeView(
 			<!-- Bottom panel: File Tracking -->
 			<div class="panel">
 				<h2 class="panel-title">File Tracking</h2>
-				${getFileListHTML(files)}
-				${getFileViewerHTML()}
+				${getFileTrackerHTML(files)}
 			</div>
 		</div>
 	</div>
@@ -232,8 +227,16 @@ export function getHomeView(
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
 	<script>
+		// Global error handler to catch any errors
+		window.addEventListener('error', (e) => {
+			console.error('[GLOBAL ERROR]', e.message, 'at', e.filename, 'line', e.lineno);
+		});
+
 		// VSCode API for communication with extension
 		const vscode = acquireVsCodeApi();
+
+		console.log('[HOMEVIEW] Script starting to execute');
+		console.log('[HOMEVIEW] Timestamp:', new Date().toISOString());
 
 		// Profile dropdown functionality
 		const profileButton = document.getElementById('profileButton');
@@ -256,9 +259,7 @@ export function getHomeView(
 		});
 
 		// File tracking functionality
-		// Note: fileViewerJS must come first as it defines showFile() which fileListJS calls
-		${getFileViewerJS()}
-		${getFileListJS()}
+		${getFileTrackerJS()}
 	</script>
 </body>
 </html>`;

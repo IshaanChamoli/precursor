@@ -37,6 +37,8 @@ export class PanelViewProvider extends BaseWebviewProvider {
 	}
 
 	private async _updatePanel() {
+		console.log('[PANEL PROVIDER] _updatePanel() called - REPLACING ENTIRE HTML');
 		this._panel.webview.html = await this.getContent(this._panel.webview);
+		console.log('[PANEL PROVIDER] HTML replaced');
 	}
 }

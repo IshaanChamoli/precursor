@@ -9,7 +9,7 @@
 export function getFileViewerJS(): string {
 	return `
 		// File viewer functionality
-		const fileViewer = document.getElementById('fileViewer');
+		console.log('[FILE VIEWER] Initializing file viewer JS');
 		const fileViewerTitle = document.getElementById('fileViewerTitle');
 		const fileContent = document.getElementById('fileContent');
 		const fileContentPre = fileContent ? fileContent.parentElement : null;
@@ -17,6 +17,7 @@ export function getFileViewerJS(): string {
 
 		// Get or initialize VSCode state
 		const state = vscode.getState() || { viewingFile: null };
+		console.log('[FILE VIEWER] Retrieved state:', state);
 
 		// Language detection map for Prism.js
 		const languageMap = {
@@ -59,7 +60,18 @@ export function getFileViewerJS(): string {
 
 		// Function to show a file in the viewer
 		function showFile(filePath) {
+			console.log('[FILE VIEWER] showFile() called with path:', filePath);
+			console.log('[FILE VIEWER] typeof filesMap:', typeof filesMap);
+			console.log('[FILE VIEWER] filesMap exists?', typeof filesMap !== 'undefined');
+
+			if (typeof filesMap === 'undefined') {
+				console.error('[FILE VIEWER] ERROR: filesMap is undefined!');
+				return;
+			}
+
 			const file = filesMap.get(filePath);
+			console.log('[FILE VIEWER] Retrieved file:', file ? file.name : 'NOT FOUND');
+
 			if (file) {
 				fileViewerTitle.textContent = file.name;
 
@@ -67,6 +79,7 @@ export function getFileViewerJS(): string {
 				const parts = file.name.split('.');
 				const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
 				const language = languageMap[extension] || 'plaintext';
+				console.log('[FILE VIEWER] Detected language:', language);
 
 				// Set content and language class
 				fileContent.textContent = file.content;
@@ -75,6 +88,7 @@ export function getFileViewerJS(): string {
 				// Show the viewer
 				fileList.style.display = 'none';
 				fileViewer.style.display = 'flex';
+				console.log('[FILE VIEWER] Switched to file viewer display');
 
 				// Apply Prism syntax highlighting
 				if (typeof Prism !== 'undefined') {
@@ -86,26 +100,43 @@ export function getFileViewerJS(): string {
 
 					// Highlight the code (this should trigger line numbers automatically)
 					Prism.highlightElement(fileContent);
+					console.log('[FILE VIEWER] Applied Prism highlighting');
 				}
 
 				// Save state
 				vscode.setState({ viewingFile: filePath });
+				console.log('[FILE VIEWER] Saved state with viewingFile:', filePath);
 			}
 		}
 
 		// If we were viewing a file before refresh, restore it with updated content
-		if (state.viewingFile && filesMap.has(state.viewingFile)) {
-			showFile(state.viewingFile);
+		console.log('[FILE VIEWER] Checking if should restore view...');
+		console.log('[FILE VIEWER] state.viewingFile:', state.viewingFile);
+		console.log('[FILE VIEWER] typeof filesMap at restore check:', typeof filesMap);
+
+		if (state.viewingFile) {
+			if (typeof filesMap === 'undefined') {
+				console.error('[FILE VIEWER] ERROR: Cannot restore view - filesMap is undefined!');
+			} else if (filesMap.has(state.viewingFile)) {
+				console.log('[FILE VIEWER] Restoring view for file:', state.viewingFile);
+				showFile(state.viewingFile);
+			} else {
+				console.warn('[FILE VIEWER] File not found in filesMap:', state.viewingFile);
+			}
+		} else {
+			console.log('[FILE VIEWER] No file to restore, showing file list');
 		}
 
 		// Handle back button click
 		if (backButton) {
 			backButton.addEventListener('click', () => {
+				console.log('[FILE VIEWER] Back button clicked');
 				fileViewer.style.display = 'none';
 				fileList.style.display = 'block';
 
 				// Clear state
 				vscode.setState({ viewingFile: null });
+				console.log('[FILE VIEWER] Cleared state and returned to file list');
 			});
 		}
 	`;

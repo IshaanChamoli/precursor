@@ -79,17 +79,10 @@ export function getFileListCSS(): string {
 export function getFileListJS(): string {
 	return `
 		// File list functionality
-		const fileList = document.getElementById('fileList');
-
-		// Load file data from embedded JSON
-		const filesDataElement = document.getElementById('filesData');
-		const filesData = filesDataElement ? JSON.parse(filesDataElement.textContent) : [];
-
-		// Create a map for quick file lookup
-		const filesMap = new Map();
-		filesData.forEach(file => {
-			filesMap.set(file.fullPath, file);
-		});
+		console.log('[FILE LIST] Initializing file list JS');
+		console.log('[FILE LIST] filesMap available?', typeof filesMap !== 'undefined');
+		console.log('[FILE LIST] filesMap size:', typeof filesMap !== 'undefined' ? filesMap.size : 'N/A');
+		console.log('[FILE LIST] fileList available?', typeof fileList !== 'undefined');
 
 		// Handle file item clicks - show file viewer
 		if (fileList) {
@@ -97,9 +90,11 @@ export function getFileListJS(): string {
 				const fileItem = e.target.closest('.file-item');
 				if (fileItem) {
 					const filePath = fileItem.dataset.filepath;
+					console.log('[FILE LIST] File clicked:', filePath);
 					showFile(filePath);
 				}
 			});
+			console.log('[FILE LIST] Click listener attached to file list');
 		}
 	`;
 }

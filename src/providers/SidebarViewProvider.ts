@@ -33,8 +33,10 @@ export class SidebarViewProvider extends BaseWebviewProvider implements vscode.W
 	}
 
 	private async _updateWebview() {
+		console.log('[SIDEBAR PROVIDER] _updateWebview() called - REPLACING ENTIRE HTML');
 		if (this._view) {
 			this._view.webview.html = await this.getContent(this._view.webview);
+			console.log('[SIDEBAR PROVIDER] HTML replaced');
 		}
 	}
 }
