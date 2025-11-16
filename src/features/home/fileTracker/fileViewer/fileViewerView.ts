@@ -1,3 +1,5 @@
+import { getDiffViewerHTML, getDiffViewerCSS } from './diffViewer';
+
 /**
  * File Viewer - displays a single opened file with syntax highlighting
  * This component shows when a user clicks on a file from the list
@@ -12,7 +14,10 @@ export function getFileViewerHTML(): string {
 		<div class="file-viewer" id="fileViewer" style="display: none;">
 			<div class="file-viewer-header">
 				<div class="file-viewer-title" id="fileViewerTitle"></div>
-				<button class="back-button" id="backButton">← Back to Files</button>
+				<div class="file-viewer-actions">
+					${getDiffViewerHTML()}
+					<button class="back-button" id="backButton">← Back to Files</button>
+				</div>
 			</div>
 			<pre class="line-numbers"><code class="file-content" id="fileContent"></code></pre>
 		</div>
@@ -43,6 +48,12 @@ export function getFileViewerCSS(): string {
 			font-size: 13px;
 			font-weight: 500;
 			color: var(--vscode-foreground);
+		}
+
+		.file-viewer-actions {
+			display: flex;
+			gap: 8px;
+			align-items: center;
 		}
 
 		.back-button {
@@ -89,5 +100,7 @@ export function getFileViewerCSS(): string {
 		.line-numbers .line-numbers-rows {
 			border-right: 1px solid var(--vscode-panel-border);
 		}
+
+		${getDiffViewerCSS()}
 	`;
 }

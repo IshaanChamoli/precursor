@@ -13,6 +13,7 @@ export class SidebarViewProvider extends BaseWebviewProvider implements vscode.W
 		_token: vscode.CancellationToken
 	) {
 		this._view = webviewView;
+		this._currentWebview = webviewView.webview;
 
 		// Set options for the webview
 		webviewView.webview.options = {

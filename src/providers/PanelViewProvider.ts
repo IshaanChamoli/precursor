@@ -15,6 +15,7 @@ export class PanelViewProvider extends BaseWebviewProvider {
 	) {
 		super(extensionUri, authService, fileTrackerService);
 		this._panel = panel;
+		this._currentWebview = panel.webview;
 		this.initialize();
 	}
 

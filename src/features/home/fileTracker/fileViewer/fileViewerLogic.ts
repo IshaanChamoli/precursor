@@ -1,3 +1,5 @@
+import { getDiffViewerJS } from './diffViewer';
+
 /**
  * File Viewer Logic - handles syntax highlighting and interactions
  * Contains all JavaScript for the file viewer component
@@ -103,6 +105,12 @@ export function getFileViewerJS(): string {
 					console.log('[FILE VIEWER] Applied Prism highlighting');
 				}
 
+				// Notify diff viewer about current file
+				if (typeof window.diffViewer !== 'undefined') {
+					window.diffViewer.setCurrentFile(filePath);
+					window.diffViewer.updateVisibility(filePath);
+				}
+
 				// Save state
 				vscode.setState({ viewingFile: filePath });
 				console.log('[FILE VIEWER] Saved state with viewingFile:', filePath);
@@ -139,5 +147,7 @@ export function getFileViewerJS(): string {
 				console.log('[FILE VIEWER] Cleared state and returned to file list');
 			});
 		}
+
+		${getDiffViewerJS()}
 	`;
 }
