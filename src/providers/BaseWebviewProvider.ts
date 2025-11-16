@@ -33,15 +33,15 @@ export abstract class BaseWebviewProvider {
 			this._authService.onAuthStateChanged(refreshCallback)
 		);
 
-		// Listen for file changes and refresh the view
+		// Listen for file changes and refresh the view (tracks ALL workspace files, even closed ones)
 		this._disposables.push(
 			this._fileTrackerService.onDidChange(refreshCallback)
 		);
 
-		// Listen for text document changes (ANY file, not just active)
+		// Listen for text document changes (open files - live unsaved edits)
 		this._disposables.push(
 			vscode.workspace.onDidChangeTextDocument(event => {
-				// Send content for ANY file that changes
+				// Track live edits in open documents
 				this._sendDocumentContent(event.document);
 			})
 		);
@@ -49,30 +49,45 @@ export abstract class BaseWebviewProvider {
 		// Listen for when documents are saved (to clear isDirty flag)
 		this._disposables.push(
 			vscode.workspace.onDidSaveTextDocument(document => {
-				// Send updated content with isDirty = false
+				// Update with isDirty = false when saved
 				this._sendDocumentContent(document);
 			})
 		);
 
-		// Listen for when documents are closed (to clean up tracking)
+		// Listen for when documents are closed
 		this._disposables.push(
 			vscode.workspace.onDidCloseTextDocument(document => {
-				const workspaceFolders = vscode.workspace.workspaceFolders;
-				if (!workspaceFolders || !this._currentWebview) {
-					return;
+				// Only remove from tracking if file was saved (not dirty)
+				// Keep dirty files in tracking even when closed (important for AI context!)
+				if (!document.isDirty) {
+					const workspaceFolders = vscode.workspace.workspaceFolders;
+					if (!workspaceFolders || !this._currentWebview) {
+						return;
+					}
+
+					const rootPath = workspaceFolders[0].uri.path;
+					const filePath = document.uri.path;
+					const relativePath = filePath.replace(rootPath + '/', '');
+
+					this._currentWebview.postMessage({
+						type: 'removeUnsavedContent',
+						filePath: relativePath
+					});
+
+					console.log('[BASE PROVIDER] Document closed and clean, removed from tracking:', relativePath);
+				} else {
+					console.log('[BASE PROVIDER] Document closed but dirty, keeping in tracking for AI context');
 				}
+			})
+		);
 
-				const rootPath = workspaceFolders[0].uri.path;
-				const filePath = document.uri.path;
-				const relativePath = filePath.replace(rootPath + '/', '');
-
-				// Tell webview to remove this file from tracking
-				this._currentWebview.postMessage({
-					type: 'removeUnsavedContent',
-					filePath: relativePath
-				});
-
-				console.log('[BASE PROVIDER] Document closed, removed from tracking:', relativePath);
+		// Listen for active editor changes (to refresh closed dirty files when reopened)
+		this._disposables.push(
+			vscode.window.onDidChangeActiveTextEditor(editor => {
+				if (editor) {
+					// Refresh content when file is opened/focused
+					this._sendDocumentContent(editor.document);
+				}
 			})
 		);
 

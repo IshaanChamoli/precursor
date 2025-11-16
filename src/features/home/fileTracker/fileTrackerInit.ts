@@ -31,10 +31,26 @@ export function getFileTrackerInitJS(): string {
 		console.log('[FILE TRACKING] Created shared filesMap with', filesMap.size, 'entries');
 
 		// Create a map to track ALL open documents (saved and unsaved)
+		// TODO: Consider more complex data structures if implementing:
+		//   - Content search: inverted index for searching across files
+		//   - Version history: linked list/tree for tracking change history
+		//   - File relationships: graph for dependency tracking
+		// For now, Map is optimal for O(1) lookups by file path
 		window.unsavedContentMap = new Map();
 		console.log('[FILE TRACKING] Created unsavedContentMap for tracking ALL open documents');
 
 		// Listen for messages from extension (document content updates for ALL files)
+		// TODO: When sending to AI, compute diffs on-demand:
+		//   function getAllChangesForAI() {
+		//     return Array.from(unsavedContentMap.entries())
+		//       .filter(([_, data]) => data.isDirty)
+		//       .map(([filePath, data]) => ({
+		//         filePath,
+		//         savedContent: filesMap.get(filePath).content,
+		//         unsavedContent: data.content,
+		//         diff: generateDiff(savedContent, unsavedContent)
+		//       }));
+		//   }
 		window.addEventListener('message', event => {
 			const message = event.data;
 
