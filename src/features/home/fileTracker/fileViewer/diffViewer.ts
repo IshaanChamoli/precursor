@@ -9,8 +9,8 @@
 export function getDiffViewerHTML(): string {
 	return `
 		<button class="diff-toggle-button" id="diffToggleButton" style="display: none;">
-			<span id="diffToggleIcon">🔀</span>
-			<span id="diffToggleText">Show Diff</span>
+			<span id="diffToggleIcon">📝</span>
+			<span id="diffToggleText">Show Unsaved</span>
 		</button>
 	`;
 }
@@ -34,8 +34,13 @@ export function getDiffViewerCSS(): string {
 			gap: 6px;
 		}
 
-		.diff-toggle-button:hover {
+		.diff-toggle-button:hover:not(:disabled) {
 			background-color: var(--vscode-button-secondaryHoverBackground);
+		}
+
+		.diff-toggle-button:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
 		}
 
 		/* Diff highlighting - using Prism diff-highlight plugin styles */
@@ -78,9 +83,9 @@ export function getDiffViewerJS(): string {
 		const diffToggleIcon = document.getElementById('diffToggleIcon');
 		const diffToggleText = document.getElementById('diffToggleText');
 
-		let isDiffMode = false;
+		let isShowingUnsaved = false; // false = showing saved, true = showing unsaved
 		let currentFilePath = null;
-		let originalContent = null; // Store original content when in diff mode
+		let savedContent = null; // Store saved content for reference
 
 		// Initialize unsaved content map if it doesn't exist
 		if (!window.unsavedContentMap) {
@@ -124,10 +129,10 @@ export function getDiffViewerJS(): string {
 		}
 
 		/**
-		 * Toggle between normal view and diff view
+		 * Toggle between showing saved and unsaved content
 		 */
 		function toggleDiffMode() {
-			console.log('[DIFF VIEWER] Toggling diff mode, current:', isDiffMode);
+			console.log('[DIFF VIEWER] Toggling view mode, currently showing:', isShowingUnsaved ? 'unsaved' : 'saved');
 
 			if (!currentFilePath) {
 				console.warn('[DIFF VIEWER] No file currently open');
@@ -140,26 +145,26 @@ export function getDiffViewerJS(): string {
 				return;
 			}
 
-			isDiffMode = !isDiffMode;
+			isShowingUnsaved = !isShowingUnsaved;
 
-			if (isDiffMode) {
-				// Switch to diff mode
-				console.log('[DIFF VIEWER] Switching to diff mode');
+			if (isShowingUnsaved) {
+				// Switch to showing unsaved content (in diff style)
+				console.log('[DIFF VIEWER] Switching to show unsaved content in diff style');
 
-				// Store original content
-				originalContent = fileContent.textContent;
+				// Store saved content for reference
+				savedContent = file.content || '';
 
 				// Detect language
 				const parts = file.name.split('.');
 				const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
 				const language = languageMap[extension] || 'plaintext';
 
-				// Get unsaved content for comparison
+				// Get unsaved content
 				const unsavedData = window.unsavedContentMap.get(currentFilePath);
-				const unsavedContent = unsavedData ? unsavedData.content : originalContent;
+				const unsavedContent = unsavedData ? unsavedData.content : savedContent;
 
-				// Generate diff (saved vs unsaved)
-				const diffText = generateDiff(file.content || '', unsavedContent || '', language);
+				// Generate diff (saved vs unsaved) to show changes
+				const diffText = generateDiff(savedContent, unsavedContent, language);
 
 				// Update display
 				fileContent.textContent = diffText;
@@ -174,17 +179,89 @@ export function getDiffViewerJS(): string {
 					Prism.highlightElement(fileContent);
 				}
 
-				// Update button
-				diffToggleIcon.textContent = '📝';
-				diffToggleText.textContent = 'Show Code';
+				// Update button to show "Show Last Saved"
+				diffToggleIcon.textContent = '💾';
+				diffToggleText.textContent = 'Show Last Saved';
 
 			} else {
-				// Switch back to normal mode
-				console.log('[DIFF VIEWER] Switching to normal mode');
+				// Switch back to showing saved content
+				console.log('[DIFF VIEWER] Switching to show saved content');
 
-				// Restore original content
-				if (originalContent) {
-					fileContent.textContent = originalContent;
+				// Show saved content from file
+				fileContent.textContent = file.content || '';
+
+				const parts = file.name.split('.');
+				const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
+				const language = languageMap[extension] || 'plaintext';
+				fileContent.className = 'file-content language-' + language;
+
+				// Apply Prism syntax highlighting
+				if (typeof Prism !== 'undefined') {
+					const existingLineNumbers = fileContentPre.querySelector('.line-numbers-rows');
+					if (existingLineNumbers) {
+						existingLineNumbers.remove();
+					}
+					Prism.highlightElement(fileContent);
+				}
+
+				// Update button to show "Show Unsaved"
+				diffToggleIcon.textContent = '📝';
+				diffToggleText.textContent = 'Show Unsaved';
+			}
+		}
+
+		// Attach click handler to diff toggle button
+		if (diffToggleButton) {
+			diffToggleButton.addEventListener('click', toggleDiffMode);
+			console.log('[DIFF VIEWER] Diff toggle button listener attached');
+		}
+
+		/**
+		 * Check if file has unsaved changes and update button state
+		 */
+		function updateDiffButtonVisibility(filePath) {
+			console.log('[DIFF VIEWER] Updating diff button visibility for:', filePath);
+			console.log('[DIFF VIEWER] currentFilePath before update:', currentFilePath);
+
+			if (!filePath) {
+				diffToggleButton.style.display = 'none';
+				return;
+			}
+
+			const file = filesMap.get(filePath);
+			if (!file) {
+				diffToggleButton.style.display = 'none';
+				return;
+			}
+
+			// Update currentFilePath if this is being called for a different file
+			// This ensures the toggle button always works for the currently viewed file
+			if (currentFilePath !== filePath) {
+				console.log('[DIFF VIEWER] Updating currentFilePath from', currentFilePath, 'to', filePath);
+				currentFilePath = filePath;
+			}
+
+			// Check if we have unsaved content for this file
+			const unsavedData = window.unsavedContentMap?.get(filePath);
+			if (unsavedData && unsavedData.isDirty) {
+				// Show button enabled when file has unsaved changes
+				diffToggleButton.style.display = 'flex';
+				diffToggleButton.disabled = false;
+				diffToggleButton.style.opacity = '1';
+				diffToggleButton.style.cursor = 'pointer';
+				console.log('[DIFF VIEWER] Diff button shown and enabled (unsaved changes detected)');
+			} else {
+				// Show button but disabled when no unsaved changes
+				diffToggleButton.style.display = 'flex';
+				diffToggleButton.disabled = true;
+				diffToggleButton.style.opacity = '0.5';
+				diffToggleButton.style.cursor = 'not-allowed';
+
+				// If we were showing unsaved, automatically switch to saved view
+				if (isShowingUnsaved && currentFilePath === filePath) {
+					console.log('[DIFF VIEWER] Auto-switching to saved view (file was saved)');
+					// Show saved content from file
+					fileContent.textContent = file.content || '';
 
 					const parts = file.name.split('.');
 					const extension = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
@@ -199,57 +276,25 @@ export function getDiffViewerJS(): string {
 						}
 						Prism.highlightElement(fileContent);
 					}
+
+					// Update state and button
+					isShowingUnsaved = false;
+					savedContent = null;
+					diffToggleIcon.textContent = '📝';
+					diffToggleText.textContent = 'Show Unsaved';
 				}
 
-				// Update button
-				diffToggleIcon.textContent = '🔀';
-				diffToggleText.textContent = 'Show Diff';
-			}
-		}
-
-		// Attach click handler to diff toggle button
-		if (diffToggleButton) {
-			diffToggleButton.addEventListener('click', toggleDiffMode);
-			console.log('[DIFF VIEWER] Diff toggle button listener attached');
-		}
-
-		/**
-		 * Check if file has unsaved changes and show/hide diff button
-		 */
-		function updateDiffButtonVisibility(filePath) {
-			console.log('[DIFF VIEWER] Updating diff button visibility for:', filePath);
-
-			if (!filePath) {
-				diffToggleButton.style.display = 'none';
-				return;
-			}
-
-			const file = filesMap.get(filePath);
-			if (!file) {
-				diffToggleButton.style.display = 'none';
-				return;
-			}
-
-			// Check if we have unsaved content for this file
-			const unsavedData = window.unsavedContentMap?.get(filePath);
-			if (unsavedData && unsavedData.isDirty) {
-				// Show diff button when file has unsaved changes
-				diffToggleButton.style.display = 'flex';
-				console.log('[DIFF VIEWER] Diff button shown (unsaved changes detected)');
-			} else {
-				// Hide diff button when no unsaved changes
-				diffToggleButton.style.display = 'none';
-				console.log('[DIFF VIEWER] Diff button hidden (no unsaved changes)');
+				console.log('[DIFF VIEWER] Diff button shown but disabled (no unsaved changes)');
 			}
 		}
 
 		/**
-		 * Refresh the diff view if currently active for this file
-		 * Called automatically when new content arrives while in diff mode
+		 * Refresh the unsaved view if currently active for this file
+		 * Called automatically when new content arrives while showing unsaved
 		 */
 		function refreshDiffIfActive(filePath) {
-			// Only refresh if we're in diff mode and viewing this file
-			if (!isDiffMode || currentFilePath !== filePath) {
+			// Only refresh if we're showing unsaved content and viewing this file
+			if (!isShowingUnsaved || currentFilePath !== filePath) {
 				return;
 			}
 
@@ -269,7 +314,7 @@ export function getDiffViewerJS(): string {
 			const unsavedData = window.unsavedContentMap.get(filePath);
 			const unsavedContent = unsavedData ? unsavedData.content : file.content;
 
-			// Regenerate diff with latest content
+			// Regenerate diff with latest content (saved vs unsaved)
 			const diffText = generateDiff(file.content || '', unsavedContent || '', language);
 
 			// Update display
@@ -285,7 +330,7 @@ export function getDiffViewerJS(): string {
 				Prism.highlightElement(fileContent);
 			}
 
-			console.log('[DIFF VIEWER] Diff refreshed live!');
+			console.log('[DIFF VIEWER] Unsaved view refreshed live!');
 		}
 
 		/**
@@ -296,10 +341,10 @@ export function getDiffViewerJS(): string {
 			refreshDiffIfActive: refreshDiffIfActive,
 			setCurrentFile: (filePath) => {
 				currentFilePath = filePath;
-				isDiffMode = false;
-				originalContent = null;
-				diffToggleIcon.textContent = '🔀';
-				diffToggleText.textContent = 'Show Diff';
+				isShowingUnsaved = false;
+				savedContent = null;
+				diffToggleIcon.textContent = '📝';
+				diffToggleText.textContent = 'Show Unsaved';
 			}
 		};
 
