@@ -164,6 +164,33 @@ export abstract class BaseWebviewProvider {
 	}
 
 	/**
+	 * Get folder path from workspace root using VSCode's path utilities
+	 */
+	private _getFolderPath(document: vscode.TextDocument, relativePath: string): string {
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+		if (!workspaceFolders) {
+			return 'root';
+		}
+
+		// Handle untitled files
+		if (document.isUntitled || relativePath.startsWith('[unsaved]/')) {
+			return '[unsaved]';
+		}
+
+		// Use VSCode's path utilities to get the directory
+		const path = require('path');
+		const dirPath = path.dirname(relativePath);
+
+		// If file is in root, dirname returns '.'
+		if (dirPath === '.' || dirPath === '') {
+			return 'root';
+		}
+
+		// Convert path separators to ' > ' for display
+		return 'root > ' + dirPath.split(path.sep).join(' > ');
+	}
+
+	/**
 	 * Send document content to webview for diff tracking
 	 * Tracks ALL documents, including unsaved "Untitled" files
 	 */
@@ -180,16 +207,20 @@ export abstract class BaseWebviewProvider {
 		// Get the current content (saved or unsaved)
 		const content = document.getText();
 
+		// Get folder path using VSCode's path utilities
+		const folderPath = this._getFolderPath(document, relativePath);
+
 		// Send to webview
 		this._currentWebview.postMessage({
 			type: 'documentContent',
 			filePath: relativePath,
+			folderPath: folderPath,
 			content: content,
 			isDirty: document.isDirty,
 			isUntitled: document.isUntitled
 		});
 
-		console.log('[BASE PROVIDER] Sent document content for:', relativePath, 'isDirty:', document.isDirty, 'isUntitled:', document.isUntitled);
+		console.log('[BASE PROVIDER] Sent document content for:', relativePath, 'folderPath:', folderPath, 'isDirty:', document.isDirty, 'isUntitled:', document.isUntitled);
 	}
 
 	/**

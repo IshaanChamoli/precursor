@@ -56,10 +56,11 @@ export function getFileTrackerInitJS(): string {
 				if (!filesMap.has(message.filePath)) {
 					const fileName = message.filePath.split('/').pop() || message.filePath;
 					const isUnsaved = message.isUntitled || message.filePath.startsWith('[unsaved]/');
+					const folderPath = message.folderPath || (isUnsaved ? '[unsaved]' : 'root');
 
 					filesMap.set(message.filePath, {
 						name: fileName,
-						path: isUnsaved ? '[unsaved]' : 'root',
+						path: folderPath,
 						fullPath: message.filePath,
 						currentSaved: '',
 						previousSaved: null,
@@ -74,7 +75,7 @@ export function getFileTrackerInitJS(): string {
 						fileItem.dataset.filepath = message.filePath;
 						fileItem.innerHTML = \`
 							<div class="file-name">\${fileName}</div>
-							<div class="file-path">\${isUnsaved ? '[unsaved]' : 'root'}</div>
+							<div class="file-path">\${folderPath}</div>
 						\`;
 						fileListElement.insertBefore(fileItem, fileListElement.firstChild);
 					}
