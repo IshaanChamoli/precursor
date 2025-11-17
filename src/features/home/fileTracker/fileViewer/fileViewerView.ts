@@ -13,13 +13,14 @@ export function getFileViewerHTML(): string {
 		<!-- File viewer (hidden by default) -->
 		<div class="file-viewer" id="fileViewer" style="display: none;">
 			<div class="file-viewer-header">
+				<button class="back-button" id="backButton">←</button>
 				<div class="file-viewer-title" id="fileViewerTitle"></div>
-				<div class="file-viewer-actions">
-					${getDiffViewerHTML()}
-					<button class="back-button" id="backButton">← Back to Files</button>
-				</div>
+				${getDiffViewerHTML()}
 			</div>
-			<pre class="line-numbers"><code class="file-content" id="fileContent"></code></pre>
+			<div class="code-container">
+				<div class="diff-view-label" id="diffViewLabel">Unsaved edits</div>
+				<pre class="line-numbers"><code class="file-content" id="fileContent"></code></pre>
+			</div>
 		</div>
 	`;
 }
@@ -39,8 +40,8 @@ export function getFileViewerCSS(): string {
 
 		.file-viewer-header {
 			display: flex;
-			justify-content: space-between;
 			align-items: center;
+			gap: 10px;
 			margin-bottom: 12px;
 		}
 
@@ -48,26 +49,48 @@ export function getFileViewerCSS(): string {
 			font-size: 13px;
 			font-weight: 500;
 			color: var(--vscode-foreground);
-		}
-
-		.file-viewer-actions {
-			display: flex;
-			gap: 8px;
-			align-items: center;
+			flex: 1;
 		}
 
 		.back-button {
-			background-color: var(--vscode-button-background);
-			color: var(--vscode-button-foreground);
+			background: transparent;
+			color: var(--vscode-foreground);
 			border: none;
-			padding: 4px 12px;
-			border-radius: 4px;
+			padding: 4px 6px;
 			cursor: pointer;
-			font-size: 12px;
+			font-size: 16px;
+			opacity: 0.6;
+			transition: opacity 0.2s ease;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 24px;
+			height: 24px;
 		}
 
 		.back-button:hover {
-			background-color: var(--vscode-button-hoverBackground);
+			opacity: 1;
+		}
+
+		.code-container {
+			position: relative;
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+
+		.diff-view-label {
+			position: absolute;
+			top: 8px;
+			right: 4px;
+			font-size: 10px;
+			color: var(--vscode-descriptionForeground);
+			opacity: 0.7;
+			z-index: 10;
+			background-color: var(--vscode-editor-background);
+			padding: 2px 6px;
+			border-radius: 3px;
 		}
 
 		/* Let Prism handle layout, we just provide VSCode theme colors */

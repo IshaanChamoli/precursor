@@ -29,8 +29,7 @@ export function getDiffViewerCSS(): string {
 		/* Diff toggle switch container */
 		.diff-toggle-container {
 			display: flex;
-			justify-content: center;
-			margin-bottom: 12px;
+			align-items: center;
 		}
 
 		/* Toggle switch */
@@ -38,10 +37,10 @@ export function getDiffViewerCSS(): string {
 			position: relative;
 			display: inline-flex;
 			background-color: var(--vscode-button-secondaryBackground);
-			border-radius: 20px;
+			border-radius: 12px;
 			padding: 2px;
-			width: 140px;
-			height: 32px;
+			width: 90px;
+			height: 24px;
 		}
 
 		.diff-toggle-switch input[type="radio"] {
@@ -53,7 +52,7 @@ export function getDiffViewerCSS(): string {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			font-size: 12px;
+			font-size: 11px;
 			font-weight: 500;
 			cursor: pointer;
 			z-index: 2;
@@ -72,7 +71,7 @@ export function getDiffViewerCSS(): string {
 			width: calc(50% - 2px);
 			height: calc(100% - 4px);
 			background-color: var(--vscode-button-background);
-			border-radius: 18px;
+			border-radius: 10px;
 			transition: transform 0.2s ease;
 			z-index: 1;
 		}
@@ -111,6 +110,7 @@ export function getDiffViewerJS(): string {
 
 		const diffTogglePrev = document.getElementById('diffTogglePrev');
 		const diffToggleNow = document.getElementById('diffToggleNow');
+		const diffViewLabel = document.getElementById('diffViewLabel');
 
 		let currentFilePath = null;
 		let currentView = 'now'; // 'prev' or 'now'
@@ -181,6 +181,11 @@ export function getDiffViewerJS(): string {
 			fileContent.textContent = diffText;
 			fileContent.className = 'file-content language-diff-' + language;
 
+			// Update label
+			if (diffViewLabel) {
+				diffViewLabel.textContent = 'Edits made by most recent save';
+			}
+
 			// Apply Prism syntax highlighting
 			if (typeof Prism !== 'undefined') {
 				const existingLineNumbers = fileContentPre.querySelector('.line-numbers-rows');
@@ -219,9 +224,17 @@ export function getDiffViewerJS(): string {
 			const liveContent = versions.liveUnsaved || currentContent; // If no unsaved, show current
 			const diffText = generateDiff(currentContent, liveContent, language);
 
+			// Check if there are any actual changes
+			const hasChanges = liveContent !== currentContent;
+
 			// Update display
 			fileContent.textContent = diffText;
 			fileContent.className = 'file-content language-diff-' + language;
+
+			// Update label
+			if (diffViewLabel) {
+				diffViewLabel.textContent = hasChanges ? 'Unsaved edits' : 'No unsaved edits';
+			}
 
 			// Apply Prism syntax highlighting
 			if (typeof Prism !== 'undefined') {
