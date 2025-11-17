@@ -180,6 +180,14 @@ export function getDiffViewerJS(): string {
 			// Generate diff: previousSaved vs currentSaved
 			const prevContent = versions.previousSaved || '';
 			const currentContent = versions.currentSaved || '';
+
+			// DEBUG: Log all three states
+			console.log('[DIFF VIEWER - PREV VIEW DEBUG] File:', currentFilePath);
+			console.log('[DIFF VIEWER - PREV VIEW DEBUG] previousSaved length:', prevContent.length, 'chars');
+			console.log('[DIFF VIEWER - PREV VIEW DEBUG] currentSaved length:', currentContent.length, 'chars');
+			console.log('[DIFF VIEWER - PREV VIEW DEBUG] liveUnsaved:', versions.liveUnsaved ? versions.liveUnsaved.length + ' chars' : 'null');
+			console.log('[DIFF VIEWER - PREV VIEW DEBUG] Are prev and current equal?', prevContent === currentContent);
+
 			const diffText = generateDiff(prevContent, currentContent, language);
 
 			// Update display

@@ -196,15 +196,15 @@ export class FileTrackerService {
 
 			// Check if file already exists in cache to preserve previous version
 			const existingFile = this._fileCache.get(relativePath);
-			const previousSaved = existingFile?.currentSaved;
 
-			// Update cache
+			// IMPORTANT: Preserve the existing previousSaved! Don't overwrite it!
+			// Only update currentSaved when file changes on disk
 			this._fileCache.set(relativePath, {
 				name: fileName,
 				path: folderPath,
 				fullPath: relativePath,
 				currentSaved: textContent,
-				previousSaved: previousSaved, // Preserve previous saved version
+				previousSaved: existingFile?.previousSaved, // Keep existing previousSaved!
 				lastModified: stats.mtime
 			});
 		} catch (err) {

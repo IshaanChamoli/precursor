@@ -94,23 +94,55 @@ export function getFileTrackerInitJS(): string {
 				if (message.isDirty) {
 					// File has unsaved changes → update liveUnsaved
 					versions.liveUnsaved = message.content;
-					console.log('[FILE TRACKING] Updated liveUnsaved for:', message.filePath);
+					console.log('[FILE TRACKING] ========== Updated liveUnsaved for:', message.filePath, '==========');
+					console.log('[FILE TRACKING - STATE] previousSaved:', versions.previousSaved || '[EMPTY/NULL]');
+					console.log('[FILE TRACKING - STATE] currentSaved:', versions.currentSaved || '[EMPTY/NULL]');
+					console.log('[FILE TRACKING - STATE] liveUnsaved:', versions.liveUnsaved || '[EMPTY/NULL]');
 				} else {
-					// File was just saved → transition states
-					// currentSaved → previousSaved
-					// liveUnsaved (or new content) → currentSaved
-					// liveUnsaved → null
-					versions.previousSaved = versions.currentSaved;
-					versions.currentSaved = message.content;
-					versions.liveUnsaved = null;
+					// isDirty = false means either:
+					// 1) File was just saved (transition states)
+					// 2) File is being opened/initialized (don't transition yet)
 
-					// Update filesMap with the new saved content
-					const file = filesMap.get(message.filePath);
-					if (file) {
-						file.currentSaved = message.content;
+					// Only transition if we actually HAD unsaved content before
+					// or if currentSaved is changing (actual save happened)
+					const hadUnsavedContent = versions.liveUnsaved !== null;
+					const contentChanged = versions.currentSaved !== message.content;
+
+					console.log('[FILE TRACKING] ========== isDirty=false for:', message.filePath, '==========');
+					console.log('[FILE TRACKING - DECISION] hadUnsavedContent:', hadUnsavedContent, 'contentChanged:', contentChanged);
+
+					if (hadUnsavedContent || contentChanged) {
+						console.log('[FILE TRACKING] ========== BEFORE STATE TRANSITION ==========');
+						console.log('[FILE TRACKING - STATE] previousSaved:', versions.previousSaved || '[EMPTY/NULL]');
+						console.log('[FILE TRACKING - STATE] currentSaved:', versions.currentSaved || '[EMPTY/NULL]');
+						console.log('[FILE TRACKING - STATE] liveUnsaved:', versions.liveUnsaved || '[EMPTY/NULL]');
+
+						// File was just saved → transition states
+						// currentSaved → previousSaved
+						// liveUnsaved (or new content) → currentSaved
+						// liveUnsaved → null
+						versions.previousSaved = versions.currentSaved;
+						versions.currentSaved = message.content;
+						versions.liveUnsaved = null;
+
+						console.log('[FILE TRACKING] ========== AFTER STATE TRANSITION ==========');
+						console.log('[FILE TRACKING - STATE] previousSaved:', versions.previousSaved || '[EMPTY/NULL]');
+						console.log('[FILE TRACKING - STATE] currentSaved:', versions.currentSaved || '[EMPTY/NULL]');
+						console.log('[FILE TRACKING - STATE] liveUnsaved:', versions.liveUnsaved || '[EMPTY/NULL]');
+
+						// Update filesMap with the new saved content
+						const file = filesMap.get(message.filePath);
+						if (file) {
+							file.currentSaved = message.content;
+						}
+
+						console.log('[FILE TRACKING] File saved! Transitioned states for:', message.filePath);
+					} else {
+						console.log('[FILE TRACKING] File opened/initialized (not a save):', message.filePath);
+						console.log('[FILE TRACKING - STATE] previousSaved:', versions.previousSaved || '[EMPTY/NULL]');
+						console.log('[FILE TRACKING - STATE] currentSaved:', versions.currentSaved || '[EMPTY/NULL]');
+						console.log('[FILE TRACKING - STATE] liveUnsaved:', versions.liveUnsaved || '[EMPTY/NULL]');
 					}
-
-					console.log('[FILE TRACKING] File saved! Transitioned states for:', message.filePath);
 				}
 
 				// Refresh diff viewer if this file is currently being viewed
