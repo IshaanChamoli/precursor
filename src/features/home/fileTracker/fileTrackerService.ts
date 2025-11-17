@@ -197,14 +197,16 @@ export class FileTrackerService {
 			// Check if file already exists in cache to preserve previous version
 			const existingFile = this._fileCache.get(relativePath);
 
-			// IMPORTANT: Preserve the existing previousSaved! Don't overwrite it!
-			// Only update currentSaved when file changes on disk
+			// IMPORTANT: Preserve ALL tracked states! Don't overwrite them!
+			// FileSystemWatcher is ONLY for detecting new files, not for updating content
+			// Content updates happen through transitionOnSave() when user saves
 			this._fileCache.set(relativePath, {
 				name: fileName,
 				path: folderPath,
 				fullPath: relativePath,
-				currentSaved: textContent,
+				currentSaved: existingFile?.currentSaved || textContent, // Keep existing, or use disk content if new file
 				previousSaved: existingFile?.previousSaved, // Keep existing previousSaved!
+				liveUnsaved: existingFile?.liveUnsaved, // Keep existing liveUnsaved!
 				lastModified: stats.mtime
 			});
 		} catch (err) {

@@ -104,14 +104,13 @@ export function getFileTrackerInitJS(): string {
 					// 2) File is being opened/initialized (don't transition yet)
 
 					// Only transition if we actually HAD unsaved content before
-					// or if currentSaved is changing (actual save happened)
+					// A save can only happen if there was something to save!
 					const hadUnsavedContent = versions.liveUnsaved !== null;
-					const contentChanged = versions.currentSaved !== message.content;
 
 					console.log('[FILE TRACKING] ========== isDirty=false for:', message.filePath, '==========');
-					console.log('[FILE TRACKING - DECISION] hadUnsavedContent:', hadUnsavedContent, 'contentChanged:', contentChanged);
+					console.log('[FILE TRACKING - DECISION] hadUnsavedContent:', hadUnsavedContent);
 
-					if (hadUnsavedContent || contentChanged) {
+					if (hadUnsavedContent) {
 						console.log('[FILE TRACKING] ========== BEFORE STATE TRANSITION ==========');
 						console.log('[FILE TRACKING - STATE] previousSaved:', versions.previousSaved || '[EMPTY/NULL]');
 						console.log('[FILE TRACKING - STATE] currentSaved:', versions.currentSaved || '[EMPTY/NULL]');
