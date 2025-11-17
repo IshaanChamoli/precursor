@@ -119,7 +119,6 @@ export function getDiffViewerJS(): string {
 		 * Generate unified diff format from two text strings
 		 */
 		function generateDiff(oldText, newText, language) {
-			console.log('[DIFF VIEWER] Generating diff');
 
 			// Simple line-by-line diff
 			const oldLines = (oldText || '').split('\\n');
@@ -153,22 +152,17 @@ export function getDiffViewerJS(): string {
 		 * Show Prev view: previousSaved vs currentSaved
 		 */
 		function showPrevView() {
-			console.log('[DIFF VIEWER] Showing Prev view for:', currentFilePath);
-
 			if (!currentFilePath) {
-				console.warn('[DIFF VIEWER] No file currently open');
 				return;
 			}
 
 			const versions = window.fileVersionsMap?.get(currentFilePath);
 			if (!versions) {
-				console.warn('[DIFF VIEWER] No version data for file');
 				return;
 			}
 
 			const file = filesMap.get(currentFilePath);
 			if (!file) {
-				console.warn('[DIFF VIEWER] File not found in filesMap');
 				return;
 			}
 
@@ -180,13 +174,6 @@ export function getDiffViewerJS(): string {
 			// Generate diff: previousSaved vs currentSaved
 			const prevContent = versions.previousSaved || '';
 			const currentContent = versions.currentSaved || '';
-
-			// DEBUG: Log all three states
-			console.log('[DIFF VIEWER - PREV VIEW DEBUG] File:', currentFilePath);
-			console.log('[DIFF VIEWER - PREV VIEW DEBUG] previousSaved length:', prevContent.length, 'chars');
-			console.log('[DIFF VIEWER - PREV VIEW DEBUG] currentSaved length:', currentContent.length, 'chars');
-			console.log('[DIFF VIEWER - PREV VIEW DEBUG] liveUnsaved:', versions.liveUnsaved ? versions.liveUnsaved.length + ' chars' : 'null');
-			console.log('[DIFF VIEWER - PREV VIEW DEBUG] Are prev and current equal?', prevContent === currentContent);
 
 			const diffText = generateDiff(prevContent, currentContent, language);
 
@@ -202,30 +189,23 @@ export function getDiffViewerJS(): string {
 				}
 				Prism.highlightElement(fileContent);
 			}
-
-			console.log('[DIFF VIEWER] Prev view rendered');
 		}
 
 		/**
 		 * Show Now view: currentSaved vs liveUnsaved
 		 */
 		function showNowView() {
-			console.log('[DIFF VIEWER] Showing Now view for:', currentFilePath);
-
 			if (!currentFilePath) {
-				console.warn('[DIFF VIEWER] No file currently open');
 				return;
 			}
 
 			const versions = window.fileVersionsMap?.get(currentFilePath);
 			if (!versions) {
-				console.warn('[DIFF VIEWER] No version data for file');
 				return;
 			}
 
 			const file = filesMap.get(currentFilePath);
 			if (!file) {
-				console.warn('[DIFF VIEWER] File not found in filesMap');
 				return;
 			}
 
@@ -251,8 +231,6 @@ export function getDiffViewerJS(): string {
 				}
 				Prism.highlightElement(fileContent);
 			}
-
-			console.log('[DIFF VIEWER] Now view rendered');
 		}
 
 		/**
@@ -287,8 +265,6 @@ export function getDiffViewerJS(): string {
 				return; // Not viewing this file
 			}
 
-			console.log('[DIFF VIEWER] Refreshing', currentView, 'view for:', filePath);
-
 			// Refresh whichever view is currently active
 			if (currentView === 'prev') {
 				showPrevView();
@@ -301,7 +277,6 @@ export function getDiffViewerJS(): string {
 		 * Set the current file and show default view
 		 */
 		function setCurrentFile(filePath) {
-			console.log('[DIFF VIEWER] Setting current file:', filePath);
 			currentFilePath = filePath;
 
 			// Default to Now view
@@ -318,7 +293,5 @@ export function getDiffViewerJS(): string {
 			refreshIfActive: refreshIfActive,
 			setCurrentFile: setCurrentFile
 		};
-
-		console.log('[DIFF VIEWER] Diff viewer initialized');
 	`;
 }

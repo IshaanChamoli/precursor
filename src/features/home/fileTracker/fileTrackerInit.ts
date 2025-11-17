@@ -11,24 +11,19 @@
 export function getFileTrackerInitJS(): string {
 	return `
 		// File tracking initialization
-		console.log('[FILE TRACKING] Loading shared file data');
-
 		// Get DOM elements (shared between file list and file viewer)
 		const fileList = document.getElementById('fileList');
 		const fileViewer = document.getElementById('fileViewer');
-		console.log('[FILE TRACKING] Got DOM elements - fileList:', !!fileList, 'fileViewer:', !!fileViewer);
 
 		// Load file data from embedded JSON
 		const filesDataElement = document.getElementById('filesData');
 		const filesData = filesDataElement ? JSON.parse(filesDataElement.textContent) : [];
-		console.log('[FILE TRACKING] Loaded file data, count:', filesData.length);
 
 		// Create a map for quick file lookup (shared between file list and file viewer)
 		const filesMap = new Map();
 		filesData.forEach(file => {
 			filesMap.set(file.fullPath, file);
 		});
-		console.log('[FILE TRACKING] Created shared filesMap with', filesMap.size, 'entries');
 
 		// Create unified map to track all three states for each file:
 		// - previousSaved: Content from the save before the current one
@@ -42,15 +37,12 @@ export function getFileTrackerInitJS(): string {
 				liveUnsaved: file.liveUnsaved || null
 			});
 		});
-		console.log('[FILE TRACKING] Created unified fileVersionsMap with', window.fileVersionsMap.size, 'entries');
 
 		// Listen for messages from extension (document content updates for ALL files)
 		window.addEventListener('message', event => {
 			const message = event.data;
 
 			if (message.type === 'documentContent') {
-				console.log('[FILE TRACKING] Received document content for:', message.filePath, 'isDirty:', message.isDirty, 'isUntitled:', message.isUntitled);
-
 				// Get or create file version entry
 				if (!window.fileVersionsMap.has(message.filePath)) {
 					window.fileVersionsMap.set(message.filePath, {
@@ -85,7 +77,6 @@ export function getFileTrackerInitJS(): string {
 							<div class="file-path">\${isUnsaved ? '[unsaved]' : 'root'}</div>
 						\`;
 						fileListElement.insertBefore(fileItem, fileListElement.firstChild);
-						console.log('[FILE TRACKING] Added new file to list:', message.filePath);
 					}
 				}
 
@@ -149,7 +140,6 @@ export function getFileTrackerInitJS(): string {
 					window.diffViewer.refreshIfActive(message.filePath);
 				}
 			} else if (message.type === 'removeUnsavedContent') {
-				console.log('[FILE TRACKING] Removing document from tracking:', message.filePath);
 
 				// Clear liveUnsaved when document is closed
 				const versions = window.fileVersionsMap.get(message.filePath);
@@ -158,6 +148,5 @@ export function getFileTrackerInitJS(): string {
 				}
 			}
 		});
-		console.log('[FILE TRACKING] Message listener attached - tracking ALL states (prev/current/live)');
 	`;
 }
