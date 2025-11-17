@@ -33,9 +33,15 @@ export abstract class BaseWebviewProvider {
 			this._authService.onAuthStateChanged(refreshCallback)
 		);
 
-		// Listen for file changes and refresh the view (tracks ALL workspace files, even closed ones)
+		// Listen for file changes (tracks ALL workspace files, even closed ones)
+		// NOTE: We don't refresh HTML here - we send messages to update frontend instead
+		// Refreshing HTML would lose the current file viewer state!
 		this._disposables.push(
-			this._fileTrackerService.onDidChange(refreshCallback)
+			this._fileTrackerService.onDidChange(() => {
+				// File list will be updated via document change messages
+				// No need to refresh entire HTML and lose viewer state
+				console.log('[BASE PROVIDER] File changed, but not refreshing HTML (would lose viewer state)');
+			})
 		);
 
 		// Listen for text document changes (open files - live unsaved edits)
@@ -43,6 +49,12 @@ export abstract class BaseWebviewProvider {
 			vscode.workspace.onDidChangeTextDocument(event => {
 				// Track live edits in open documents
 				this._sendDocumentContent(event.document);
+
+				// Update backend cache with live content
+				const relativePath = this._getRelativePath(event.document);
+				if (relativePath && event.document.isDirty) {
+					this._fileTrackerService.updateLiveContent(relativePath, event.document.getText());
+				}
 			})
 		);
 
@@ -51,6 +63,12 @@ export abstract class BaseWebviewProvider {
 			vscode.workspace.onDidSaveTextDocument(document => {
 				// Update with isDirty = false when saved
 				this._sendDocumentContent(document);
+
+				// Transition states in backend: currentSaved → previousSaved, liveUnsaved → currentSaved
+				const relativePath = this._getRelativePath(document);
+				if (relativePath) {
+					this._fileTrackerService.transitionOnSave(relativePath, document.getText());
+				}
 			})
 		);
 
@@ -60,15 +78,15 @@ export abstract class BaseWebviewProvider {
 				// Only remove from tracking if file was saved (not dirty)
 				// Keep dirty files in tracking even when closed (important for AI context!)
 				if (!document.isDirty) {
-					const workspaceFolders = vscode.workspace.workspaceFolders;
-					if (!workspaceFolders || !this._currentWebview) {
+					const relativePath = this._getRelativePath(document);
+					if (!relativePath || !this._currentWebview) {
 						return;
 					}
 
-					const rootPath = workspaceFolders[0].uri.path;
-					const filePath = document.uri.path;
-					const relativePath = filePath.replace(rootPath + '/', '');
+					// Clear liveUnsaved in backend
+					this._fileTrackerService.updateLiveContent(relativePath, null);
 
+					// Notify webview
 					this._currentWebview.postMessage({
 						type: 'removeUnsavedContent',
 						filePath: relativePath
@@ -91,6 +109,15 @@ export abstract class BaseWebviewProvider {
 			})
 		);
 
+		// Listen for NEW files being opened (including unsaved "Untitled-1" etc.)
+		this._disposables.push(
+			vscode.workspace.onDidOpenTextDocument(document => {
+				// Track new files immediately, even if unsaved
+				this._sendDocumentContent(document);
+				console.log('[BASE PROVIDER] New document opened:', document.uri.path, 'isUntitled:', document.isUntitled);
+			})
+		);
+
 		// Send initial content for ALL currently open documents
 		vscode.workspace.textDocuments.forEach(document => {
 			this._sendDocumentContent(document);
@@ -107,34 +134,48 @@ export abstract class BaseWebviewProvider {
 	}
 
 	/**
+	 * Get relative path for a document (handles both file and untitled schemes)
+	 */
+	private _getRelativePath(document: vscode.TextDocument): string | null {
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+		if (!workspaceFolders) {
+			return null;
+		}
+
+		// Skip non-file/non-untitled documents
+		if (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled') {
+			return null;
+		}
+
+		if (document.uri.scheme === 'untitled') {
+			const fileName = document.uri.path.split('/').pop() || `Untitled-${Date.now()}`;
+			return `[unsaved]/${fileName}`;
+		} else {
+			const rootPath = workspaceFolders[0].uri.path;
+			const filePath = document.uri.path;
+
+			// Skip files outside workspace
+			if (!filePath.startsWith(rootPath)) {
+				return null;
+			}
+
+			return filePath.replace(rootPath + '/', '');
+		}
+	}
+
+	/**
 	 * Send document content to webview for diff tracking
-	 * Tracks ALL documents, not just the active one
+	 * Tracks ALL documents, including unsaved "Untitled" files
 	 */
 	private _sendDocumentContent(document: vscode.TextDocument) {
 		if (!this._currentWebview) {
 			return;
 		}
 
-		const workspaceFolders = vscode.workspace.workspaceFolders;
-		if (!workspaceFolders) {
+		const relativePath = this._getRelativePath(document);
+		if (!relativePath) {
 			return;
 		}
-
-		// Skip non-file documents (like output panels, git diff views, etc.)
-		if (document.uri.scheme !== 'file') {
-			return;
-		}
-
-		// Get the file path relative to workspace root
-		const rootPath = workspaceFolders[0].uri.path;
-		const filePath = document.uri.path;
-
-		// Skip files outside workspace
-		if (!filePath.startsWith(rootPath)) {
-			return;
-		}
-
-		const relativePath = filePath.replace(rootPath + '/', '');
 
 		// Get the current content (saved or unsaved)
 		const content = document.getText();
@@ -144,10 +185,11 @@ export abstract class BaseWebviewProvider {
 			type: 'documentContent',
 			filePath: relativePath,
 			content: content,
-			isDirty: document.isDirty
+			isDirty: document.isDirty,
+			isUntitled: document.isUntitled
 		});
 
-		console.log('[BASE PROVIDER] Sent document content for:', relativePath, 'isDirty:', document.isDirty);
+		console.log('[BASE PROVIDER] Sent document content for:', relativePath, 'isDirty:', document.isDirty, 'isUntitled:', document.isUntitled);
 	}
 
 	/**

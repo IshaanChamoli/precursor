@@ -108,7 +108,6 @@ export function getFileViewerJS(): string {
 				// Notify diff viewer about current file
 				if (typeof window.diffViewer !== 'undefined') {
 					window.diffViewer.setCurrentFile(filePath);
-					window.diffViewer.updateVisibility(filePath);
 				}
 
 				// Save state

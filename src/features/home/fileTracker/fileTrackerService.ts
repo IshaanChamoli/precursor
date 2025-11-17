@@ -4,9 +4,11 @@ export interface FileInfo {
 	name: string;
 	path: string; // Folder path from workspace root (e.g., "root > src > components")
 	fullPath: string; // Full relative path including filename (e.g., "src/components/Header.tsx")
-	currentContent: string; // Current saved content of the file
-	previousContent?: string; // Previous saved version (for diff tracking)
+	previousSaved?: string; // Previous saved version (for diff tracking - used for "Prev" view)
+	currentSaved: string; // Current saved content of the file (for diff tracking)
+	liveUnsaved?: string; // Live unsaved edits (for "Now" view - tracked from editor)
 	lastModified: number; // Timestamp of last save
+	isUnsaved?: boolean; // True if this is an unsaved file (like "Untitled-1")
 }
 
 export class FileTrackerService {
@@ -79,6 +81,43 @@ export class FileTrackerService {
 
 		// Return cached files as array
 		return Array.from(this._fileCache.values());
+	}
+
+	/**
+	 * Update live unsaved content for a file
+	 * Called from BaseWebviewProvider when tracking document changes
+	 */
+	updateLiveContent(filePath: string, content: string | null) {
+		const file = this._fileCache.get(filePath);
+		if (file) {
+			file.liveUnsaved = content || undefined;
+		} else {
+			// File not in cache yet - create entry for unsaved file
+			this._fileCache.set(filePath, {
+				name: filePath.split('/').pop() || filePath,
+				path: '[unsaved]',
+				fullPath: filePath,
+				previousSaved: undefined,
+				currentSaved: '',
+				liveUnsaved: content || undefined,
+				lastModified: Date.now(),
+				isUnsaved: true
+			});
+		}
+	}
+
+	/**
+	 * Transition states when a file is saved
+	 * currentSaved → previousSaved, liveUnsaved → currentSaved, liveUnsaved = null
+	 */
+	transitionOnSave(filePath: string, newSavedContent: string) {
+		const file = this._fileCache.get(filePath);
+		if (file) {
+			file.previousSaved = file.currentSaved;
+			file.currentSaved = newSavedContent;
+			file.liveUnsaved = undefined;
+			file.lastModified = Date.now();
+		}
 	}
 
 	/**
@@ -157,15 +196,15 @@ export class FileTrackerService {
 
 			// Check if file already exists in cache to preserve previous version
 			const existingFile = this._fileCache.get(relativePath);
-			const previousContent = existingFile?.currentContent;
+			const previousSaved = existingFile?.currentSaved;
 
 			// Update cache
 			this._fileCache.set(relativePath, {
 				name: fileName,
 				path: folderPath,
 				fullPath: relativePath,
-				currentContent: textContent,
-				previousContent: previousContent, // Preserve previous saved version
+				currentSaved: textContent,
+				previousSaved: previousSaved, // Preserve previous saved version
 				lastModified: stats.mtime
 			});
 		} catch (err) {

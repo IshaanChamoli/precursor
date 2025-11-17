@@ -14,7 +14,10 @@ export function getFileListHTML(files: FileInfo[]): string {
 		name: file.name,
 		path: file.path,
 		fullPath: file.fullPath,
-		content: file.currentContent
+		previousSaved: file.previousSaved || null,
+		currentSaved: file.currentSaved,
+		liveUnsaved: file.liveUnsaved || null,
+		isUnsaved: file.isUnsaved || false
 	})));
 
 	return `
